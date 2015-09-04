@@ -8,6 +8,60 @@ from setuptools import setup
 # README file and 2) it's easier to type in the README file than to put a raw
 # string in below ...
 
+import logging
+from setuptools.command.install import install
+
+perms = {
+  "etc/OANDA": 0700,
+  "etc/OANDA/config": 0700,
+  "etc/OANDA/config/OANDAd.cfg": 0600,
+  "etc/OANDA/config/plugins": 0700,
+  "etc/OANDA/config/plugins/plainfile.cfg": 0600,
+  "etc/OANDA/config/plugins/pubsub.cfg": 0600,
+  "etc/OANDA/config/plugins/example/mysql.cfg": 0600,
+  "etc/OANDA/plugins": 0700,
+  "etc/OANDA/plugins/plainfile.py": 0600,
+  "etc/OANDA/plugins/pubsub.py": 0600,
+  "bin/OANDAd": 0711,
+}
+
+
+class CustomInstallCommand(install):
+
+    def run(self):
+        uid, gid = 1000, 1000
+        mode = 0700
+        install.run(self)
+        # calling install.run(self) insures that everything that happened
+        # previously still happens, so the installation does not break!
+
+        # here we start with doing our overriding and private magic ...
+
+        # determine prefix: depends on virtualenv of systeminstall
+        PREF = "/" if not sys.real_prefix else sys.prefix
+
+        def alter_perms(F, filepath):
+            if F not in perms:
+                logging.info("No perms found for: " + F)
+                return
+            mode = perms[F]
+            logging.info("Overriding setuptools mode of scripts ...")
+            logging.info("Changing ownership of %s to uid:%s gid %s" %
+                         (filepath, uid, gid))
+            os.chown(filepath, uid, gid)
+            logging.info("Changing permissions of %s to %s" %
+                         (filepath, oct(mode)))
+            os.chmod(filepath, mode)
+
+        for filepath in self.get_outputs():
+            F = filepath.replace(PREF, '').lstrip("/")
+            if F in perms:
+                # check the file
+                alter_perms(F, filepath)
+                # check the dir. of the file
+                F = os.path.dirname(F)
+                alter_perms(F, os.path.dirname(filepath))
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -52,6 +106,7 @@ data_files = prep_path(virtual_env, [
        ])
 
 setup(
+    cmdclass={'install': CustomInstallCommand},
     name="oanda-trading-environment",
     version="0.0.1",
     author="Feite Brekeveld",
