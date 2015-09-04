@@ -44,9 +44,9 @@ def prep_path(virtual_env, lot):
 
 data_files = prep_path(virtual_env, [
         ('/etc/OANDA/config', ['etc/OANDA/config/OANDAd.cfg']),
-        ('/etc/OANDA/config/plugins', ['etc/OANDA/config/plugins/pubsub.cfg']),
+        ('/etc/OANDA/config/plugins', ['etc/OANDA/config/plugins/pubsub.cfg', 'etc/OANDA/config/plugins/plainfile.cfg']),
         ('/etc/OANDA/config/plugins/example', ['etc/OANDA/config/plugins/example/mysql.cfg']),
-        ('/etc/OANDA/plugins', ['etc/OANDA/plugins/pubsub.py', 'etc/OANDA/plugins/README.md']),
+        ('/etc/OANDA/plugins', ['etc/OANDA/plugins/pubsub.py', 'etc/OANDA/plugins/plainfile.py', 'etc/OANDA/plugins/README.md']),
         ('/etc/OANDA/plugins/example', ['etc/OANDA/plugins/example/mysql.py']),
         ('/var/log/OANDA', []),
        ])
