@@ -1,0 +1,250 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+import logging
+import time
+import daemonocle
+import psutil
+import signal
+import json
+from datetime import datetime
+
+from oanda_trading_environment.daemon.config import Config
+from oanda_trading_environment.daemon.plugin import PluginManager
+from oanda_trading_environment.stream import CandleFactory, StreamRecord
+from oanda_trading_environment import stream
+
+# initial exponential backup
+EBO = 1
+MAX_FORK_STREAMPARSER_SLAVE = 5
+
+# in case we have real_prefix this is in a virtual env
+PREFIX = "/" if not hasattr(sys, 'real_prefix') else sys.prefix
+
+CONFIG_FILE = os.path.join(PREFIX, "etc/OANDA/config/OANDAd.cfg")
+
+
+def mkPathFunc(prefix=None):
+    def fullPath(path):
+        return os.path.join(prefix, path.lstrip("/"))
+    return fullPath
+
+fullPath = mkPathFunc(PREFIX)
+
+
+def alter_paths(search_dict):
+    """
+    alter the paths in the config data by adding the prefix in case
+    of use in a virtual env
+    """
+    for key, value in search_dict.iteritems():
+
+        if "path" in key or "file" in key:
+            search_dict.update({key: fullPath(value)})
+
+        elif isinstance(value, dict):
+            alter_paths(value)
+
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    alter_paths(item)
+
+
+parser = argparse.ArgumentParser(prog='OANDAd')
+
+verbose = argparse.ArgumentParser(add_help=False)
+verbose.add_argument('--verbose', '-v', action="count", help='verbosity level')
+verbose.add_argument('--config', '-c', default=CONFIG_FILE,
+                     help="config file, default: " + CONFIG_FILE)
+verbose.add_argument('--foreground', '-f', action='store_true',
+                     help="run in foreground, default is daemonize")
+
+sp = parser.add_subparsers()
+sp_command = sp.add_parser('start', parents=[verbose],
+                           help="Starts %(prog)s daemon")
+sp_stop = sp.add_parser('stop', parents=[verbose],
+                        help="Stops %(prog)s daemon")
+sp_status = sp.add_parser('status', parents=[verbose],
+                          help="Status %(prog)s daemon")
+
+verbose.set_defaults(verbose=None)
+sp_command.set_defaults(command='start')
+sp_status.set_defaults(verbose=0, foreground=None,
+                       config=CONFIG_FILE, command='status')
+sp_stop.set_defaults(verbose=0, foreground=None,
+                     config=CONFIG_FILE, command='stop')
+
+args = parser.parse_args()
+
+# globals
+factories = {}
+
+
+def cb_shutdown(message, code):
+    # make sure to kill child processes also
+    logging.info('Daemon is stopping %d' % os.getpid())
+    p = None
+    try:
+        p = psutil.Process(os.getpid())
+    except psutil.NoSuchProcess:
+        logging.info('No such process ...')
+        return
+
+    child_pid = p.get_children(recursive=True)
+    for pid in child_pid:
+        os.kill(pid.pid, signal.SIGTERM)
+        logging.info('killing %d' % pid)
+
+    logging.debug(message)
+
+
+class TickProcessor(object):
+    def __init__(self, plugin_manager):
+        self.pm = plugin_manager
+
+    def on_success(self, s):
+        if isinstance(s, stream.StreamRecord) and s.recordtype() == stream.TICK:
+            try:
+                for factory in factories[s['instrument']]:
+                    r = factory.processTick(s)
+                    if r:
+                        logging.info("record completed: " + json.dumps(r))
+                        self.pm.execute(r)
+            except KeyError:
+                logging.error("no factory for: %s" % s['instrument'])
+
+# -------------------------------------------------
+
+
+class Main(object):
+
+    def __init__(self, config, daemon):
+        self._config = config
+        self._daemon = daemon
+        self.pid = None
+        logging.info("Daemon is starting (%d)" % os.getpid())
+        for instrument, details in config['instruments'].iteritems():
+            factories.update({instrument: []})
+            logging.info("setting up candle factories for: %s" % instrument)
+            for timeframe in details['timeframes']:
+                factories[instrument].append(CandleFactory(instrument,
+                                             timeframe))
+                logging.info("  created: factory %s, timeframe: %s" %
+                             (instrument, timeframe))
+
+    def main(self):
+        ebo = EBO
+        forks = 0
+        while True:
+            logging.info("forking slave streamparser")
+            pid = None
+            referenceEpoch = 0
+            try:
+                pid = os.fork()
+                referenceEpoch = int(time.time())
+            except OSError as e:
+                logging.error('%s' % e)
+                time.sleep(2)
+                forks += 1
+                if forks <= MAX_FORK_STREAMPARSER_SLAVE:
+                    continue
+                else:
+                    logging.error("Exiting: max forks reached")
+                    exit(2)
+
+            if pid:
+                childExitStatus, text = os.wait()
+
+                childExitCode = childExitStatus >> 8
+                logging.info('slave %d died: exit: %d' % (pid, childExitCode))
+                # check how/ how soon it died
+                now = int(time.time())
+                if now - referenceEpoch < 1:
+                    logging.error("slave %d died to soon ... respawn with "
+                                  "exp. backoff %d seconds" % (pid, ebo))
+                    ebo *= 2
+                    time.sleep(ebo)
+                else:
+                    logging.error("slave %d died ... after %d seconds" %
+                                  (pid, now - referenceEpoch))
+            elif pid == 0:
+                # start the streamer
+                # if it times out the outer while-True will get us a new one
+
+                # prevent cleanup of the pidfile when child process exits
+                self._daemon.shutdown_callback = None
+                self._daemon.pidfile = None
+                logging.info('starting slave streamparser: %d %d' %
+                             (os.getpid(), os.getppid()))
+                streamLog = None
+                if "logfile" in config["streamer"]:
+                    try:
+                        streamLogName = config['streamer']['logfile']
+                        extFormat = ""
+                        if 'date_extension_format' in config["streamer"]:
+                            extFormat = config['streamer']['date_extension_format']
+                        ext = datetime.now().strftime(extFormat)
+                        streamLogName = "%s.%s" % (streamLogName, ext)
+                        streamLog = open(streamLogName, "a")
+                    except:
+                        logging.error('failure opening streamlog: %' %
+                                      config["streamer"]["logfile"])
+
+                try:
+                    pm = None
+                    pm = PluginManager(config=self._config['plugins'])
+                    pm.load()
+                    tp = TickProcessor(pm)
+                    s = stream.Streamer(on_success=tp.on_success,
+                                        streamLog=streamLog,
+                                        environment="practice",
+                                        access_token=config['access_token'])
+                    s.start(accountId=config['account_id'],
+                            instruments=",".join(factories.keys()))
+                except Exception as e:
+                    logging.error("%s" % e)
+                    exit(2)
+
+
+if __name__ == '__main__':
+    config = None
+    try:
+        config = Config(args.config)
+        alter_paths(config.data)
+    except Exception as e:
+        logging.error("%s" % e)
+
+    if args.command == "start":
+        logging.basicConfig(
+            filename=config['daemon']['logfile'],
+            level=logging.DEBUG,
+            format='%(asctime)s [%(levelname)s] %(name)s : %(message)s',
+        )
+
+        try:
+            logging.info("Setting loglevel to: %s" % config['daemon']['loglevel'])
+            logging.getLogger().setLevel(getattr(logging, config['daemon']['loglevel']))
+        except:
+            logging.error("failure changing loglevel, check configfile")
+
+        daemon = daemonocle.Daemon(
+            shutdown_callback=cb_shutdown,
+            workdir=".",
+            pidfile=config['daemon']['pidfile'],
+        )
+        try:
+            parser = Main(config=config, daemon=daemon)
+        except Exception as e:
+            logging.error("%s" % e)
+        daemon.worker = parser.main
+        daemon.do_action(args.command)
+
+    elif args.command in ["stop", "status"]:
+        daemon = daemonocle.Daemon(
+            shutdown_callback=cb_shutdown,
+            pidfile=config['daemon']['pidfile'],
+        )
+        daemon.do_action(args.command)
