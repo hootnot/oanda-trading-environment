@@ -137,7 +137,7 @@ setup(
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Financial and Insurance Industry",
-        "Operating System :: Linux",
+        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
