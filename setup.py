@@ -136,7 +136,7 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Intended Audience :: Finanance and Insurance Industry",
+        "Intended Audience :: Finanancial and Insurance Industry",
         "Operating System :: Linux",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
