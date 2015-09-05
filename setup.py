@@ -125,7 +125,7 @@ setup(
     # oandapy is a dependency. Is is not on pypi and does not have a distutils compatible setup
     # therefore this fork is used
     dependency_links=[
-       "git+https://github.com/b1r3k/oandapy#egg=oandapy-0.1"
+       "git+https://github.com/hootnot/oandapy#egg=oandapy-0.1"
     ],
     # generate 'binaries' from the code
     entry_points={
@@ -136,10 +136,10 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Intended Audience :: Traders",
+        "Intended Audience :: Finanance and Insurance Industry",
         "Operating System :: Linux",
         "Programming Language :: Python",
-        "Topic :: Trading :: Auto Trading :: Quoteserver :: OANDA",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     test_suite="tests",
 )
