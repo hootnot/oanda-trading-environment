@@ -38,7 +38,7 @@ class CustomInstallCommand(install):
         # here we start with doing our overriding and private magic ...
 
         # determine prefix: depends on virtualenv of systeminstall
-        PREF = "/" if not sys.real_prefix else sys.prefix
+        PREF = "/" if not hasattr(sys, "real_prefix") else sys.prefix
 
         def alter_perms(F, filepath):
             if F not in perms:
@@ -78,8 +78,7 @@ def get_packages(package):
 requirements = map(str.strip, open("requirements.txt").readlines())
 
 # python 2.7 hack to figure out if we run in a virtualenv
-# virtual_env = hasattr(sys, 'real_prefix')
-virtual_env = os.getenv('VIRTUAL_ENV')
+virtual_env = None if not hasattr(sys, "real_prefix") else sys.prefix
 
 
 def prep_path(virtual_env, lot):
@@ -126,7 +125,7 @@ setup(
     # oandapy is a dependency. Is is not on pypi and does not have a distutils compatible setup
     # therefore this fork is used
     dependency_links=[
-       "git+https://github.com/b1r3k/oandapy#egg=oandapy",
+       "git+https://github.com/b1r3k/oandapy#egg=oandapy-0.1"
     ],
     # generate 'binaries' from the code
     entry_points={
