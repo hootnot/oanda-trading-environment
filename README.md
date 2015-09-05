@@ -1,6 +1,8 @@
 OANDA Trading Environment
 ===================================
 
+[![PyPI version](https://badge.fury.io/py/oanda-trading-environment.svg)](http://badge.fury.io/py/oanda-trading-environment)
+
 The OANDA Trading Environment is built using the OANDA REST-API by making use of the [https://github.com/oanda/oandapy](https://github.com/oanda/oandapy) API-wrapper.
 
 Streaming Candles
