@@ -32,6 +32,9 @@ Actions
 
 When a timeframe is completed it can be handled by one or more plugins.
 Plugins have a configfile based on the name of the plugin-file, but in lowercase.
+The plugins can be found under _etc/OANDA/plugins_ and the plugin configs under _etc/OANDA/config/plugins_.
+
+Plugins need to be enabled in the config file, see the 'plugins:' section in _etc/OANDA/config/OANDAd.cfg_.
 
 The environment comes with a few plugins:
 
@@ -40,7 +43,7 @@ The environment comes with a few plugins:
 This plugin can be configured to 'publish' the candle using a publisher/subscriber mechanism. This is achieved by using the [0MQ](http://zeromq.org)
 library and the python binding for it: pyzmq
 
-Other trading applications can easily subscribe to receive the quotes.
+Other trading applications can easily subscribe to receive the candle data. See [here](#zmq_example) for a ZMQ subscription example.
 
 This plugin is enabled by default.
 
@@ -106,17 +109,68 @@ Specs and Prerequisites
 
 To access the OANDA services you will need a token, see [https://developer.oanda.com](https://developer.oanda.com) for details.
 
+Install
+-------
+
+### Git
+
+Install by using a virtual environment and git:
+
+      $ cd <somewhere>
+      $ mkdir OANDA
+      $ cd OANDA
+      $ virtualenv venv
+
+Optionally use _--system-site-packages_ to use the standard available packages for the python modules available
+on your system: _pyyaml_, _pyzmq_. Check for the packages on the distribution you use.
+
+      $ . ./venv/bin/activate
+      $ git clone https://github.com/hootnot/oanda-trading-environment.git
+      $ cd oanda-trading-environment
+      $ python setup.py install
+
+OANDA has not made the oandapy module pip installable.
+A hack to get oandapy installed as a standalone module:
+
+      $ pip install git+https://github.com/hootnot/oandapy
+
+This will install the latest oandapy using the setup.py from the oandapy fork.
+
+      $ pip list | grep oanda
+      oanda-trading-environment (0.0.1)
+      oandapy (0.1)
+
+### pip
+
+Install from pypi:
+
+using a virtual environment:
+
+      $ cd <somewhere>
+      $ mkdir OANDA
+      $ cd OANDA
+      $ virtualenv [--system-site-packages] venv
+      $ . ./venv/bin/activate
+      $ pip install oanda-trading-environment
+      $ pip install git+https://github.com/hootnot/oandapy
+
+using a system install:
+
+      $ sudo pip install oanda-trading-environment
+      $ sudo pip install git+https://github.com/hootnot/oandapy
+
+Configure the OANDAd.cfg config file and start the daemon.
 
 ### Quick start
 
 After installing you **need** to configure the environment by editing the
-config file 'etc/OANDA/config/OANDAd.cfg'. This is a YAML based configfile.
+config file _etc/OANDA/config/OANDAd.cfg_. This is a YAML based configfile.
 
 Configure the **environment** and the **token**. Alter the list of instruments 
 you want to follow. 
 
 The pubsub plugin publishes by default at localhost, port 5550. These can 
-be altered in the 'pubsub' config: 'etc/OANDA/config/plugins/broadcast'.
+be altered in the 'pubsub' config: _etc/OANDA/config/plugins/pubsub.cfg_.
 
 #### Controlling OANDAd
 
@@ -142,12 +196,21 @@ as configured. Timeframes are currently based on the midprice of bid/ask.
 
 The ticks received from the stream are written to a logfile:
 
-     quoteStream.log<date>
+     streamdata.<date>
+
+The daemon itself logs to OANDAd.log
+
+Loglevel and the streamdata logfile extension is configurable. Check the _OANDAd.cfg_ file
+for details.
 
 
-### ZMQ - client
+### <a name="zmq_example"></a>ZMQ - client
+
 
 This simple piece of code acts as a subscriber to the daemon. All completed timeframes are written to stdout.
+Using ZMQ make it easy to program different strategies completely independent from each other. By using 'topics' 
+it is possible to subscribe for a certain time granularity like M1, M5 etc. Check the ZMQ for details.
+
 
      import zmq
 
@@ -161,3 +224,49 @@ This simple piece of code acts as a subscriber to the daemon. All completed time
        msg = socket.recv()
        print "GOT: ", msg
 
+This will show candle data like below, every time a timeframe is completed.
+
+     GOT:  {"data": {
+                     "instrument": "EUR_GBP",
+                     "granularity": "M1",
+                     "start": "2015-09-04 17:45:00",
+                     "end": "2015-09-04 17:46:00",
+                     "data": {
+                              "high": 0.734445,
+                              "open": 0.734399,
+                              "last": 0.73437,
+                              "low": 0.734345,
+                              "volume": 16
+                             }
+                    }
+           }
+
+     GOT:  {"data": {
+                     "instrument": "EUR_JPY",
+                     "granularity": "M1",
+                     "start": "2015-09-04 17:45:00",
+                     "end": "2015-09-04 17:46:00",
+                     "data": {
+                              "high": 132.629,
+                              "open": 132.619,
+                              "last": 132.6185,
+                              "low": 132.608,
+                              "volume": 15
+                             }
+                    }
+            }
+
+     GOT:  {"data": {
+                     "instrument": "SPX500_USD",
+                     "granularity": "M1",
+                     "start": "2015-09-04 17:45:00",
+                     "end": "2015-09-04 17:46:00",
+                     "data": {
+                              "high": 1915.35,
+                              "open": 1914.75,
+                              "last": 1915.25,
+                              "low": 1914.75,
+                              "volume": 33
+                             }
+                    }
+            }
