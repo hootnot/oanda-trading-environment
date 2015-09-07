@@ -1,13 +1,21 @@
+import sys
 import time
 from datetime import datetime
 import re
 from streamrecord import HEARTBEAT
+import logging
 
 """
 {"tick": {"ask": 10901.4, "instrument": "DE30_EUR", "bid": 10898.9,
                                  "time": "2015-08-18T17:15:14.574448Z"}}
 {"heartbeat": {"time": "2015-08-18T17:15:26.743512Z"}}
 """
+
+atEndOfTimeFrame = 1
+dancingBear = 2
+dancingBearHighLowExtreme = 3
+
+logger = logging.getLogger(__name__)
 
 
 class UnknownGranularity(Exception):
@@ -34,13 +42,25 @@ def granularity_to_time(s):
 
 class CandleFactory(object):
 
-    def __init__(self, instrument, granularity):
+    def __init__(self, instrument, granularity, processingMode='atEndOfTimeFrame'):
         self.instrument = instrument
         self.frameTime = granularity_to_time(granularity)
         self.granularity = granularity
         self.data = None
         self.start = None
         self.end = None
+        self.processing = None
+        self.processingMode = processingMode
+        try:
+            self.processing = getattr(sys.modules[__name__], self.processingMode)
+        except:
+            logger.error("unknown processing mode: %s" % self.processingMode)
+
+            self.processingMode = "atEndOfTimeFrame"
+            self.processing = getattr(sys.modules[__name__], self.processingMode)
+            logger.info("fallback to processing mode: %s" % self.processingMode)
+        else:
+            logger.info("processing mode: %s" % self.processingMode)
 
     def initData(self, tick):
         # init the frame
@@ -48,33 +68,38 @@ class CandleFactory(object):
         self.start = tick.epoch - (tick.epoch % self.frameTime)
         self.end = tick.epoch - (tick.epoch % self.frameTime) + self.frameTime
         self.data = {
-            "open": tick.data['value'],
-            "high": tick.data['value'],
-            "low": tick.data['value'],
-            "last": tick.data['value'],
-            "volume": 1
+            "instrument": self.instrument,
+            "start": "%s" % self.secs2time(self.start),
+            "end": "%s" % self.secs2time(self.end),
+            "granularity": self.granularity,
+            "completed": False,
+            "data": {
+                "open": tick.data['value'],
+                "high": tick.data['value'],
+                "low": tick.data['value'],
+                "last": tick.data['value'],
+                "volume": 1
+            }
         }
 
     def secs2time(self, e):
         w = time.gmtime(e)
         return datetime(*list(w)[0:6])
 
-    def make_candle(self):
-        candle = {
-            "instrument": self.instrument,
-            "start": "%s" % self.secs2time(self.start),
-            "end": "%s" % self.secs2time(self.end),
-            "granularity": self.granularity,
-            "data": self.data.copy()
-        }
-        return candle
+    def make_candle(self, completed=False):
+        self.data['completed'] = completed
+        return self.data.copy()
 
     def processTick(self, tick):
         if tick.recordtype() == HEARTBEAT:
             if self.data and tick.epoch > self.end:
                 # this frame is completed based on the heartbeat timestamp
-                candle = self.make_candle()
+                candle = self.make_candle(completed=True)
                 self.data = None     # clear it, reinitialized by the next tick
+                logger.warn("infrequent ticks: %s, %s completed with "
+                            "heartbeat (%d secs)" %
+                            (self.instrument, self.granularity,
+                             (tick.epoch - self.end)))
                 return candle
             else:
                 return
@@ -91,16 +116,28 @@ class CandleFactory(object):
         # ... we got data already
         # is this tick for this frame ? ... process it
         if tick.epoch >= self.start and tick.epoch < self.end:
-            if tick.data['value'] > self.data['high']:
-                self.data['high'] = tick.data['value']
-            if tick.data['value'] < self.data['low']:
-                self.data['low'] = tick.data['value']
-            self.data['last'] = tick.data['value']
-            self.data['volume'] += 1
+            extremeChange = False
+            lastChange = False
+            if tick.data['value'] > self.data['data']['high']:
+                self.data['data']['high'] = tick.data['value']
+                extremeChange = True
+            if tick.data['value'] < self.data['data']['low']:
+                self.data['data']['low'] = tick.data['value']
+                extremeChange = True
+            if tick.data['value'] != self.data['data']['last']:
+                self.data['data']['last'] = tick.data['value']
+                lastChange = True
+            self.data['data']['volume'] += 1
+            if (self.processing == dancingBear and lastChange) or \
+               (self.processing == dancingBearHighLowExtreme and extremeChange):
+                logger.info("mode: %s change of extremes for %s, %s" %
+                            (self.processingMode, self.instrument,
+                             self.granularity))
+                return self.make_candle()
             return None
 
         # this tick not within boundaries ?
         # the 'current' is completed
-        candle = self.make_candle()
+        candle = self.make_candle(completed=True)
         self.initData(tick)
         return candle

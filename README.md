@@ -29,6 +29,15 @@ Candle data:
 
 The larger timeframes can be requested using the API.
 
+Streaming data can be controlled by the 'fabricate' setting in the 'streamer:' 
+config section. 
+
+* atEndOfTimeFrame - the default mode is to fabricate completed timeframes
+* dancingBear - generates _dancing bear_ records with the 'completed' : False, until the record is completed. At that moment the record gets the status 'completed' : True.
+* dancingBearHighLowExtreme - generate _dancing bear_ records *only* when the high or the low changes
+
+The _dancingBear_ setting generates as much records as ticks are received. This can be a lot. A compomise is the _dancingBearHighLowExtreme_. In case of extreme moves the records will be generated.
+
 Actions
 -------
 

@@ -20,6 +20,10 @@ class PlainFile(Plugin):
     def execute(self, data):
         # logger.info("%s %s" % (self.__class__.__name__, json.dumps(data)))
   
+        # write only completed records
+        if "completed" not in data:
+            return
+
         fileName = os.path.join(self.database, data['instrument'], data['granularity'], "cache")
         if not os.path.isfile(fileName):
             dirName = os.path.dirname(fileName)

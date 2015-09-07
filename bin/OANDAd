@@ -125,13 +125,19 @@ class Main(object):
         self._config = config
         self._daemon = daemon
         self.pid = None
+        processingMode = "atEndOfTimeFrame"
+
+        if "fabricate" in config['streamer']:
+            processingMode = config['streamer']['fabricate']
+
         logging.info("Daemon is starting (%d)" % os.getpid())
         for instrument, details in config['instruments'].iteritems():
             factories.update({instrument: []})
             logging.info("setting up candle factories for: %s" % instrument)
             for timeframe in details['timeframes']:
                 factories[instrument].append(CandleFactory(instrument,
-                                             timeframe))
+                                             timeframe,
+                                             processingMode=processingMode))
                 logging.info("  created: factory %s, timeframe: %s" %
                              (instrument, timeframe))
 

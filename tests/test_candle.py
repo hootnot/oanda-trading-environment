@@ -74,6 +74,7 @@ candles = {
          'start': '2015-08-21 06:11:00',
          'end': '2015-08-21 06:12:00',
          'granularity': 'M1',
+         'completed': True,
          'data': {'high': 10215.0,
                   'open': 10195.0,
                   'last': 10200.0,
@@ -84,6 +85,7 @@ candles = {
          'start': '2015-08-21 06:10:00',
          'end': '2015-08-21 06:15:00',
          'granularity': 'M5',
+         'completed': True,
          'data': {'high': 10215.0,
                   'open': 10195.0,
                   'last': 10200.0,
@@ -94,6 +96,7 @@ candles = {
           'start': '2015-08-21 06:00:00',
           'end': '2015-08-21 06:15:00',
           'granularity': 'M15',
+          'completed': True,
           'data': {'high': 10215.0,
                    'open': 10195.0,
                    'last': 10200.0,
@@ -104,6 +107,7 @@ candles = {
          'start': '2015-08-21 06:00:00',
          'end': '2015-08-21 07:00:00',
          'granularity': 'H1',
+         'completed': True,
          'data': {'high': 10215.0,
                   'open': 10195.0,
                   'last': 10200.0,
@@ -142,14 +146,15 @@ class Test_candlefactory(unittest.TestCase):
         self.assertEqual(r, None)
 
     def test_frames(self):
-        """ ticks that make a timeframe
+        """ ticks that make a timeframe : atEndOfTimeFrame
             candle data should be returned
             perform this for given granularities
         """
         self.maxDiff = None
         for F in ["M1", "M5", "M15", "H1"]:
             testdata = test_ticks[F]
-            candle_factory = CandleFactory("DE30_EUR", F)
+            candle_factory = CandleFactory("DE30_EUR", F,
+                                           processingMode='atEndOfTimeFrame')
             res = []
             for T in testdata:
                 r = candle_factory.processTick(StreamRecord(T))
