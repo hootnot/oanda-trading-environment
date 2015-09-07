@@ -18,6 +18,7 @@ Candle data:
                 "granularity" : "M1",
                 "start": "2015-09-02 15:36:00"
                 "end": "2015-09-02 15:37:00",
+                "completed": True,
                 "data": {"high": 134.967, 
                          "open": 134.962,
                          "last": 134.9565,
