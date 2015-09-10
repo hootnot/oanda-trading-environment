@@ -118,6 +118,37 @@ Example:
 The MySQL plugin can be configured to insert records into a database. This plugin is provided as an example, since it needs details that depend on your
 databasemodel.
 
+Auto trading
+-------------
+
+### By using a ZMQ client
+
+The desired approach is to create stand-alone applications that subscribe for quotes,
+see, [example](#zmq_example) for a ZMQ subscription example.
+
+### By using plugins
+
+Though it is possible to use the plugin facility to perform auto-trading, the
+way to go is to use ZMQ client and subscribe for quotes. This way you can
+completely isolate your trading code from the OANDAd daemon.
+
+
+Security
+----------------
+
+The enviroment makes use of a token that gives access to crucial information.
+
+Please pay attention to where you install this software. **Never** use this on
+a system that is not owned by you. 
+
+Make sure to secure your system as much as possible:
+
+* restrict network access
+* make no use of, or limit other network services (NFS, SAMBA, printserver etc.)
+* limit user access, preferable only you
+* use encryption
+* who about physical access ?
+
 
 Specs and Prerequisites
 ------------------------
@@ -181,8 +212,12 @@ Configure the OANDAd.cfg config file and start the daemon.
 After installing you **need** to configure the environment by editing the
 config file _etc/OANDA/config/OANDAd.cfg_. This is a YAML based configfile.
 
-Configure the **environment** and the **token**. Alter the list of instruments 
-you want to follow. 
+Configure the **environment**, default set to _practice_ and the **token**. Alter
+ the list of instruments you want to follow.
+
+Though accounts can be requested using the API, the environment uses the
+**account** setting primarily to initialize the OANDAd for the streaming quotes.
+Therefore you need to configure the **account_id** also.
 
 The pubsub plugin publishes by default at localhost, port 5550. These can 
 be altered in the 'pubsub' config: _etc/OANDA/config/plugins/pubsub.cfg_.
@@ -246,6 +281,7 @@ This will show candle data like below, every time a timeframe is completed.
                      "granularity": "M1",
                      "start": "2015-09-04 17:45:00",
                      "end": "2015-09-04 17:46:00",
+                     "completed": True,
                      "data": {
                               "high": 0.734445,
                               "open": 0.734399,
@@ -261,6 +297,7 @@ This will show candle data like below, every time a timeframe is completed.
                      "granularity": "M1",
                      "start": "2015-09-04 17:45:00",
                      "end": "2015-09-04 17:46:00",
+                     "completed": True,
                      "data": {
                               "high": 132.629,
                               "open": 132.619,
@@ -276,6 +313,7 @@ This will show candle data like below, every time a timeframe is completed.
                      "granularity": "M1",
                      "start": "2015-09-04 17:45:00",
                      "end": "2015-09-04 17:46:00",
+                     "completed": True,
                      "data": {
                               "high": 1915.35,
                               "open": 1914.75,
