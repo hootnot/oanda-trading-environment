@@ -65,8 +65,10 @@ class PluginManager(object):
                         continue
 
                     # print "CONFIG: ", plugin
-                    inst = class_(config=Config(os.path.join(
-                                 self.config_path, "%s.cfg" % plugin.lower())))
+                    cfgForInst = Config(prefix=self.config.prefix)
+                    cfgForInst.load(os.path.join(self.config_path, "%s.cfg" % plugin.lower()))
+
+                    inst = class_(config=cfgForInst)
                     logger.info("plugin loaded and configured: %s" % f )
                     self.pm += inst
 

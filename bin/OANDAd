@@ -25,41 +25,13 @@ PREFIX = "/" if not hasattr(sys, 'real_prefix') else sys.prefix
 
 CONFIG_FILE = os.path.join(PREFIX, "etc/OANDA/config/OANDAd.cfg")
 
-
-def mkPathFunc(prefix=None):
-    def fullPath(path):
-        return os.path.join(prefix, path.lstrip("/"))
-    return fullPath
-
-fullPath = mkPathFunc(PREFIX)
-
-
-def alter_paths(search_dict):
-    """
-    alter the paths in the config data by adding the prefix in case
-    of use in a virtual env
-    """
-    for key, value in search_dict.iteritems():
-
-        if "path" in key or "file" in key:
-            search_dict.update({key: fullPath(value)})
-
-        elif isinstance(value, dict):
-            alter_paths(value)
-
-        elif isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    alter_paths(item)
-
-
 parser = argparse.ArgumentParser(prog='OANDAd')
 
 verbose = argparse.ArgumentParser(add_help=False)
 verbose.add_argument('--verbose', '-v', action="count", help='verbosity level')
 verbose.add_argument('--config', '-c', default=CONFIG_FILE,
                      help="config file, default: " + CONFIG_FILE)
-verbose.add_argument('--foreground', '-f', action='store_true',
+verbose.add_argument('--foreground', '-f', action='store_true', default=False,
                      help="run in foreground, default is daemonize")
 
 sp = parser.add_subparsers()
@@ -126,9 +98,22 @@ class Main(object):
         self._daemon = daemon
         self.pid = None
         processingMode = "atEndOfTimeFrame"
+        # --
+        logging.basicConfig(
+            filename=config['daemon::logfile'],
+            level=logging.DEBUG,
+            format='%(asctime)s [%(levelname)s] %(name)s : %(message)s',
+        )
+
+        try:
+            logging.info("Setting loglevel to: %s" % config['daemon::loglevel'])
+            logging.getLogger().setLevel(getattr(logging, config['daemon::loglevel']))
+        except:
+            logging.error("failure changing loglevel, check configfile")
+        # --
 
         if "fabricate" in config['streamer']:
-            processingMode = config['streamer']['fabricate']
+            processingMode = config['streamer::fabricate']
 
         logging.info("Daemon is starting (%d)" % os.getpid())
         for instrument, details in config['instruments'].iteritems():
@@ -188,20 +173,23 @@ class Main(object):
                 streamLog = None
                 if "logfile" in config["streamer"]:
                     try:
-                        streamLogName = config['streamer']['logfile']
+                        streamLogName = config['streamer::logfile']
                         extFormat = ""
                         if 'date_extension_format' in config["streamer"]:
-                            extFormat = config['streamer']['date_extension_format']
+                            extFormat = config['streamer::date_extension_format']
                         ext = datetime.now().strftime(extFormat)
                         streamLogName = "%s.%s" % (streamLogName, ext)
                         streamLog = open(streamLogName, "a")
                     except:
                         logging.error('failure opening streamlog: %' %
-                                      config["streamer"]["logfile"])
+                                      config["streamer::logfile"])
 
                 try:
                     pm = None
-                    pm = PluginManager(config=self._config['plugins'])
+                    # initialize the PluginManager with partial Config
+                    pm = PluginManager(
+                           config=Config(configdata=self._config['plugins'],
+                                         prefix=config.prefix))
                     pm.load()
                     tp = TickProcessor(pm)
                     s = stream.Streamer(on_success=tp.on_success,
@@ -218,39 +206,24 @@ class Main(object):
 if __name__ == '__main__':
     config = None
     try:
-        config = Config(args.config)
-        alter_paths(config.data)
+        config = Config(prefix=PREFIX)
+        config.load(args.config)
     except Exception as e:
         logging.error("%s" % e)
+        exit(0)
 
-    if args.command == "start":
-        logging.basicConfig(
-            filename=config['daemon']['logfile'],
-            level=logging.DEBUG,
-            format='%(asctime)s [%(levelname)s] %(name)s : %(message)s',
-        )
-
-        try:
-            logging.info("Setting loglevel to: %s" % config['daemon']['loglevel'])
-            logging.getLogger().setLevel(getattr(logging, config['daemon']['loglevel']))
-        except:
-            logging.error("failure changing loglevel, check configfile")
-
+    if args.command in ["start", "stop", "status"]:
+        detach = False if args.foreground else True
         daemon = daemonocle.Daemon(
             shutdown_callback=cb_shutdown,
-            workdir=".",
-            pidfile=config['daemon']['pidfile'],
+            workdir=PREFIX,
+            detach=detach,
+            pidfile=config['daemon::pidfile'],
         )
         try:
             parser = Main(config=config, daemon=daemon)
         except Exception as e:
             logging.error("%s" % e)
-        daemon.worker = parser.main
-        daemon.do_action(args.command)
-
-    elif args.command in ["stop", "status"]:
-        daemon = daemonocle.Daemon(
-            shutdown_callback=cb_shutdown,
-            pidfile=config['daemon']['pidfile'],
-        )
-        daemon.do_action(args.command)
+        else:
+            daemon.worker = parser.main
+            daemon.do_action(args.command)
