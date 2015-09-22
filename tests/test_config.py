@@ -19,12 +19,14 @@ def logit(f):
 class Test_Config(unittest.TestCase):
     def setUp(self):
         global testcfg
-        testcfg = config.Config("etc/OANDA/config/OANDAd.cfg")
+        testcfg = config.Config()
+        testcfg.load("etc/OANDA/config/OANDAd.cfg")
 
     def test_openfailure(self):
         cfg = None
         with self.assertRaises(IOError) as cm:
-            cfg = config.Config("etc/nonexistant.cfg")
+            cfg = config.Config()
+            cfg.load("etc/nonexistant.cfg")
 
     def test__domain(self):
         """ TEST: get domain from config, should return domainname
@@ -39,6 +41,14 @@ class Test_Config(unittest.TestCase):
                           }, {
            "schedule": {'till': 'friday, 23:00', 'from': 'sunday, 23:00'},
            "token": "_token_from_oanda_here_",
+        })
+
+    def test__schedule_from(self):
+        """ TEST: get schedule 'from' from config, should return day, time
+        """
+        self.assertEqual({"from": testcfg['schedule::from'],
+                          }, {
+           'from': 'sunday, 23:00',
         })
 
     def test__timeframes(self):
