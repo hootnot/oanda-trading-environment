@@ -67,6 +67,14 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
+def get_version(package):
+    """
+    Return package version as listed in `__version__` in `init.py`.
+    """
+    init_py = open(os.path.join(package, '__init__.py')).read()
+    return re.search("__version__ = ['\"]([^'\"]+)['\"]", init_py).group(1)
+
+
 def get_packages(package):
     """
     Return root package and all sub-packages.
@@ -74,6 +82,7 @@ def get_packages(package):
     return [dirpath
             for dirpath, dirnames, filenames in os.walk(package)
             if os.path.exists(os.path.join(dirpath, '__init__.py'))]
+
 
 requirements = map(str.strip, open("requirements.txt").readlines())
 
@@ -107,7 +116,7 @@ data_files = prep_path(virtual_env, [
 setup(
     cmdclass={'install': CustomInstallCommand},
     name="oanda-trading-environment",
-    version="0.0.1",
+    version=version,
     author="Feite Brekeveld",
     author_email="f.brekeveld@gmail.com",
     description=("OANDA REST-API based environment serving as a base for futher development of trading tools. Main part is the OANDAd daemon processing the streaming quotes"),
