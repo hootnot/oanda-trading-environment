@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import pwd
 
 from setuptools import setup
 
@@ -30,8 +31,19 @@ perms = {
 class CustomInstallCommand(install):
 
     def run(self):
-        uid, gid = 1000, 1000
+        uid, gid = None, None
         mode = 0700
+        try:
+            pw_ent = pwd.getpwnam("oanda")
+            uid = pw_ent.pw_uid
+            gid = pw_ent.pw_gid
+        except KeyError:
+            sys.stderr.write("******************************************************\n")
+            sys.stderr.write("*** Please add the OANDA-user first to your system ***\n")
+            sys.stderr.write("*** missing: username: oanda, group: oanda         ***\n")
+            sys.stderr.write("******************************************************\n")
+            exit(0)
+
         install.run(self)
         # calling install.run(self) insures that everything that happened
         # previously still happens, so the installation does not break!
