@@ -113,6 +113,8 @@ data_files = prep_path(virtual_env, [
         ('/var/log/OANDA', []),
        ])
 
+version = get_version('oanda_trading_environment')
+
 setup(
     cmdclass={'install': CustomInstallCommand},
     name="oanda-trading-environment",
