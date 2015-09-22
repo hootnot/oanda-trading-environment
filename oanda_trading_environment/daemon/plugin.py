@@ -22,6 +22,7 @@ class PluginManager(object):
     def __init__(self, config):
         self.plugin_path = config['plugin_path']
         self.config_path = config['config_path']
+        self.config = config
         self.enabled = []
         if config['enabled']:
             self.enabled = config['enabled']
