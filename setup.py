@@ -25,6 +25,7 @@ perms = {
   "etc/OANDA/plugins/plainfile.py": 0600,
   "etc/OANDA/plugins/pubsub.py": 0600,
   "bin/OANDAd": 0711,
+  "var/log/OANDA": 0700,
 }
 
 
