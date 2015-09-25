@@ -9,6 +9,7 @@ import daemonocle
 import psutil
 import signal
 import json
+import pwd
 from datetime import datetime
 
 from oanda_trading_environment.daemon.config import Config
@@ -205,9 +206,13 @@ class Main(object):
 
 if __name__ == '__main__':
     config = None
+    uid, gid = None, None
     try:
         config = Config(prefix=PREFIX)
         config.load(args.config)
+        pwrec = pwd.getpwnam(config["daemon::user"])
+        uid = pwrec.pw_uid
+        gid = pwrec.pw_gid
     except Exception as e:
         logging.error("%s" % e)
         exit(0)
@@ -218,6 +223,8 @@ if __name__ == '__main__':
             shutdown_callback=cb_shutdown,
             workdir=PREFIX,
             detach=detach,
+            uid=uid,
+            gid=gid,
             pidfile=config['daemon::pidfile'],
         )
         try:
