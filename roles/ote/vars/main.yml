@@ -19,6 +19,4 @@ packages:
 iptables_rules:
   - { name: 'pubsub',
       rule: '-A INPUT -p tcp -m tcp --dport 5550 -m state --state NEW -j ACCEPT -m comment --comment "pubsub"' }
-  - { name: 'feite',
-      rule: '-A INPUT -p tcp -m tcp --dport 6550 -m state --state NEW -j ACCEPT -m comment --comment "feite"' }
 
