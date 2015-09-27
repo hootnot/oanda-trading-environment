@@ -6,7 +6,7 @@ packages:
   # forces us to install iptables and iptables-persistent manually
   # - iptables
   # - iptables-persistent
-  # - python-virtualenv  ( is already installed manually to get Ansible )
+  - python-virtualenv
 
   # just because it is handy
   - screen
@@ -16,6 +16,8 @@ iptables_rules:
       rule: '-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT' }
   - { name: 'ssh',
       rule: '-A INPUT -p tcp -m tcp --dport 22 -m state --state NEW -j ACCEPT'}
-  - { name: 'test1',
-      rule: '-A INPUT -p tcp -m tcp --dport 8022 -m state --state NEW -j ACCEPT -m comment --comment "test1"'}
+
+# rules identified by comment
+#  - { name: 'test1',
+#      rule: '-A INPUT -p tcp -m tcp --dport 8022 -m state --state NEW -j ACCEPT -m comment --comment "test1"'}
 
