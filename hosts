@@ -1,0 +1,4 @@
+[ote_servers]
+
+# local deployment
+localhost ansible_connection=local

@@ -1,0 +1,4 @@
+# The global variable file OTE installation
+#
+# NOTE: variables here will be overriden by variables in role/vars/main.yml
+#

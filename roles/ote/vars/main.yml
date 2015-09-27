@@ -1,0 +1,24 @@
+---
+# file: roles/ote/vars/main.yml
+#
+virtual_env: ~oanda/.
+oanda_home: /opt/oanda
+
+packages:
+  # though raspbian wheezy comes with ZMQ the latest version is preferred
+  # to be able to build ZMQ we need:
+  - libffi-dev
+  - autoconf
+  - automake
+  - libtool
+
+# rules we want in the iptables 
+# these rules are only applied if they were not set yet
+
+# in case you want to publish data using pubsub remove the comment
+iptables_rules:
+  - { name: 'pubsub',
+      rule: '-A INPUT -p tcp -m tcp --dport 5550 -m state --state NEW -j ACCEPT -m comment --comment "pubsub"' }
+  - { name: 'feite',
+      rule: '-A INPUT -p tcp -m tcp --dport 6550 -m state --state NEW -j ACCEPT -m comment --comment "feite"' }
+

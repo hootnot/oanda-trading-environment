@@ -1,0 +1,20 @@
+---
+# role/common/handlers/main.yml
+
+- name: osrelease
+  command: cat /etc/os-release
+  register: osrelease
+
+# restarting iptables does not work on Debian
+- name: restart iptables
+  shell: "echo *** RESTART IPTABLES MANUALLY, AFTER INSTALL ***"
+  when: ( ansible_os_familiy == 'Debian' and osrelease.stdout.find("ID=raspbian") == -1)
+
+# restarting iptables on Raspberry Pi raspbian wheezy
+- name: restart iptables
+  shell: service iptables-persistent restart
+  when: ( ansible_os_familiy == 'Debian' and osrelease.stdout.find("ID=raspbian") != -1)
+
+- name: save iptables
+  shell: service iptables-persistent save > /etc/iptables/rules.v4
+  when: ansible_os_family == 'Debian'

@@ -1,0 +1,10 @@
+---
+# this playbook deploys OANDA Trading Environment
+
+- hosts: all
+  roles:
+  - role: common
+
+- hosts: ote_servers
+  roles:
+  - role: ote

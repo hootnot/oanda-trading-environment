@@ -1,0 +1,51 @@
+---
+# This Playbook arranges the setup of the OANDA trading Environment
+
+- name: install required packages
+  apt: name={{item}} update_cache=yes cache_valid_time=86400
+  with_items: packages
+  notify:
+    - restart iptables
+
+- name: setup OANDA application group
+  group: name=oanda
+
+- name: setup OANDA application user
+  user: name=oanda shell=/bin/bash home="{{ oanda_home }}" comment="OANDA-TE" group="oanda" state=present
+
+- name: setup virtualenv for OTE
+  pip: name=requests[security] virtualenv="{{ virtual_env }}"
+
+- name: venv upgrade pip
+  pip: name=pip virtualenv="{{ virtual_env }}" extra_args=--upgrade
+
+- name: venv build pyzmq (takes a while!)
+  pip: name=pyzmq virtualenv="{{ virtual_env }}"
+
+- name: oandapy (from fork!)
+  pip: name="git+https://github.com/hootnot/oandapy.git#egg=0.1.0" virtualenv="{{ virtual_env }}"
+
+- name: oanda-trading-environment
+  pip: name=/tmp/oanda-trading-environment-0.1.0.tar.gz virtualenv="{{ virtual_env }}"
+
+- name: make venv enabled by .profile
+  lineinfile: dest="{{ oanda_home }}"/.profile line=". ./bin/activate"
+
+- name: enable oanda user to sudo
+  template: src=oanda_sudoers.j2 dest=/etc/sudoers.d/oanda validate='visudo -cf %s'
+
+- name: enable start of daemon at system boot
+  lineinfile: dest=/etc/rc.local line="su -l oanda -c \"sudo /opt/oanda/bin/OANDAd start\"" insertbefore="exit 0"
+
+- name: getrules
+  command: /sbin/iptables -L
+  register: iptablesrules
+
+- name: iptables rules
+  shell: /sbin/iptables {{item.rule}}
+  when: iptablesrules.stdout.find("{{item.name}}") == -1
+  with_items: iptables_rules
+  notify:
+    - save iptables
+    - restart iptables
+
