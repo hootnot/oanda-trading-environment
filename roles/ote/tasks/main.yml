@@ -13,8 +13,13 @@
 - name: setup OANDA application user
   user: name=oanda shell=/bin/bash home="{{ oanda_home }}" comment="OANDA-TE" group="oanda" state=present
 
-- name: setup virtualenv for OTE
+- name: account permissions
+  file: name="{{ oanda_home }}" state=directory mode=0700
+
+- name: setup virtualenv for OTE under user oanda
   pip: name=requests[security] virtualenv="{{ virtual_env }}"
+  become: yes
+  become_user: oanda
 
 - name: venv upgrade pip
   pip: name=pip virtualenv="{{ virtual_env }}" extra_args=--upgrade
@@ -26,7 +31,7 @@
   pip: name="git+https://github.com/hootnot/oandapy.git#egg=0.1.0" virtualenv="{{ virtual_env }}"
 
 - name: oanda-trading-environment
-  pip: name=/tmp/oanda-trading-environment-0.1.0.tar.gz virtualenv="{{ virtual_env }}"
+  pip: name=oanda-trading-environment virtualenv="{{ virtual_env }}"
 
 - name: make venv enabled by .profile
   lineinfile: dest="{{ oanda_home }}"/.profile line=". ./bin/activate"
