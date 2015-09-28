@@ -4,6 +4,14 @@
 virtual_env: ~oanda/.
 oanda_home: /opt/oanda
 
+# the oandapy package is installed from this fork
+# if OANDA makes it pip installable, it will be made part of the requirements file
+oandapy_package: git+https://github.com/hootnot/oandapy.git#egg=0.1.0
+
+# Normally the package will be installed from pypi. If a package with this name
+# exists locally under /tmp/ote, that package will be installed
+ote_package_name: oanda-trading-environment
+
 packages:
   # though raspbian wheezy comes with ZMQ the latest version is preferred
   # to be able to build ZMQ we need:
