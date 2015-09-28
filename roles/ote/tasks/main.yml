@@ -30,8 +30,17 @@
 - name: oandapy (from fork!)
   pip: name="git+https://github.com/hootnot/oandapy.git#egg=0.1.0" virtualenv="{{ virtual_env }}"
 
-- name: oanda-trading-environment
-  pip: name=oanda-trading-environment virtualenv="{{ virtual_env }}"
+- name: check for local package
+  stat: path=/tmp/ote/oanda-trading-environment.tar.gz
+  register: package_stat
+
+- name: install from local OTE-package
+  pip: name=/tmp/ote/"{{ote_package_name}}".tar.gz virtualenv="{{ virtual_env }}"
+  when: package_stat.stat.exists == True
+
+- name: install OTE from pypi
+  pip: name="{{ote_package_name}}" virtualenv="{{ virtual_env }}"
+  when: package_stat.stat.exists == False
 
 - name: make venv enabled by .profile
   lineinfile: dest="{{ oanda_home }}"/.profile line=". ./bin/activate"
