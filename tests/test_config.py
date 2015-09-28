@@ -28,6 +28,12 @@ class Test_Config(unittest.TestCase):
             cfg = config.Config()
             cfg.load("etc/nonexistant.cfg")
 
+    def test_NoDataError(self):
+        cfg = None
+        with self.assertRaises(config.NoDataError) as cm:
+            cfg = config.Config()
+            cfg["daemon::user"]
+
     def test__domain(self):
         """ TEST: get domain from config, should return domainname
         """
