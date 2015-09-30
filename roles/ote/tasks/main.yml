@@ -4,8 +4,6 @@
 - name: install required packages
   apt: name={{item}} update_cache=yes cache_valid_time=86400
   with_items: packages
-  notify:
-    - restart iptables
 
 - name: setup OANDA application group
   group: name=oanda
@@ -59,7 +57,5 @@
   shell: /sbin/iptables {{item.rule}}
   when: iptablesrules.stdout.find("{{item.name}}") == -1
   with_items: iptables_rules
-  notify:
-    - save iptables
-    - restart iptables
-
+#  notify:
+#    - save iptables
