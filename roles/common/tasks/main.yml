@@ -13,7 +13,3 @@
   shell: /sbin/iptables {{item.rule}}
   when: iptablesrules.stdout.find("{{item.name}}") == -1
   with_items: iptables_rules
-  notify:
-    - save iptables
-    - restart iptables
-
