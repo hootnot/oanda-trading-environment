@@ -98,7 +98,7 @@ class PluginHandler(object):
             logger.info("plugin: %s execute ...", handler.__class__.__name__)
             try:
                 handler.execute(data)
-            except:
+            except Exception:
                 logger.error("plugin: %s execute failure %s", handle.__class__.__name__, sys.exc_info()[0])
 
     def __len__(self):
