@@ -147,10 +147,9 @@ setup(
     # long_description=read('README'),
     scripts=["bin/OANDAd"],
     data_files=data_files,
-    # oandapy is a dependency. Is is not on pypi and does not have a distutils compatible setup
-    # therefore this fork is used
+    # oandapy is a dependency
     dependency_links=[
-       "git+https://github.com/hootnot/oandapy#egg=oandapy-0.1"
+       "git+https://github.com/oanda/oandapy.git"
     ],
     # generate 'binaries' from the code
     entry_points={
