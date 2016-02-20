@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def timeoutHandler(signum, frame):
-    logger.warn("TIMEOUT ... exiting pid %d" % os.getpid())
+    logger.warn("TIMEOUT ... exiting pid %d", os.getpid())
     sys.exit(1)
 
 
@@ -61,30 +61,30 @@ class Streamer(oandapy.Streamer):
             self.ONsuccess(r)
 
         elif r.recordtype() == streamrecord.HEARTBEAT:
-            logger.info("heartbeat: %s" % (r['time'],))
-            logger.info("processed # %d ticks" % (self.hb_interval_ticks,))
+            logger.info("heartbeat: %s", r['time'])
+            logger.info("processed # %d ticks", self.hb_interval_ticks)
             self.hb_interval_ticks = 0
             self.ONsuccess(r)
             signal.alarm(HBTIME_OUT)
 
             if abs((r.dt - self.last_tick_stamp).total_seconds()) > TICKTIME_OUT:
-                logger.warn("at %s NO TICKS FOR: %.5f seconds" %
-                            (self.last_tick_stamp,
-                             abs((r.dt -
-                                  self.last_tick_stamp).total_seconds())))
+                logger.warn("at %s NO TICKS FOR: %.5f seconds",
+                            self.last_tick_stamp,
+                            abs((r.dt -
+                                  self.last_tick_stamp).total_seconds()))
 
         else:
             signal.alarm(HBTIME_OUT)
-            logger.error("unknown record type %s\n" % (data,))
+            logger.error("unknown record type %s\n", data)
             raise TimeoutException()
 
         if self.logFile:
-            self.logFile.write("%s\n" % r)
+            self.logFile.write("%s\n", r)
             self.logFile.flush()
 
     def on_error(self, data):
         if self.logFile:
             self.logFile.flush()
         self.disconnect()
-        logger.error("disconnect %s\n" % (data,))
+        logger.error("disconnect %s\n", data)
         raise DisconnectException()
