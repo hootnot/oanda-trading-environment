@@ -13,7 +13,7 @@ class InsertRecord(Plugin):
         mysqlParam.update({"host": self.config['host']})
         try:
             mysqlParam.update({"port": self.config['port']})
-        except Exception as e:
+        except KeyError:
             # no port specified : use the default
             pass
         mysqlParam.update({"user": self.config['user']})
