@@ -2,11 +2,6 @@ import json
 import calendar
 from datetime import datetime
 
-"""
-{"tick": {"ask": 10901.4, "instrument": "DE30_EUR", "bid": 10898.9,
-                                 "time": "2015-08-18T17:15:14.574448Z"}}
-{"heartbeat": {"time": "2015-08-18T17:15:26.743512Z"}}
-"""
 mid_bid_ask = 4
 
 TICK = 1
@@ -18,8 +13,11 @@ class UnknownStreamRecord(Exception):
 
 
 class StreamRecord(object):
-    """
-       StreamRecord - convert OANDA streamrecord
+    """StreamRecord - convert OANDA streamrecord.
+
+    {"tick": {"ask": 10901.4, "instrument": "DE30_EUR", "bid": 10898.9,
+                              "time": "2015-08-18T17:15:14.574448Z"}}
+    {"heartbeat": {"time": "2015-08-18T17:15:26.743512Z"}}
     """
     def __init__(self, s, mode=mid_bid_ask):
         # accept JSON data aswell as stringdata to convert to JSON
@@ -38,13 +36,18 @@ class StreamRecord(object):
             self.data['bid'] = j["bid"]
             self.data['ask'] = j["ask"]
             self.data['mid'] = (j['bid'] + j['ask'])/2.0
-            self.data['value'] = self.data['mid']
+            if mode == mid_bid_ask:
+                self.data['value'] = self.data['mid']
+            else:
+                raise Exception("Unknown mode: %d" % mode)
+
         elif "heartbeat" in j:
             self.rtype = HEARTBEAT
             j = j["heartbeat"]
             self.dt = datetime.strptime(j['time'], '%Y-%m-%dT%H:%M:%S.%fZ')
             self.epoch = int(calendar.timegm(self.dt.timetuple()))
             self.data['time'] = j['time']
+
         else:
             raise UnknownStreamRecord(s)
 
