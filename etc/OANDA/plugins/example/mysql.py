@@ -1,4 +1,3 @@
-import sys
 import pymysql
 
 from oanda_trading_environment.daemon.plugin import Plugin
