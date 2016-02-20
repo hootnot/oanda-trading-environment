@@ -45,8 +45,7 @@ class PlainFile(Plugin):
 
 
 if __name__ == "__main__":
-    import sys
-    import time
+    # import sys
     from oanda_trading_environment.daemon.config import Config
     # config = Config(sys.argv[1])
     b = PlainFile(config={"database": "/tmp/db/"})
