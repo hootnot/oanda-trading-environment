@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+from abc import ABCMeta, abstractmethod
 from oanda_trading_environment.daemon.config import Config
 
 logger = logging.getLogger(__name__)
@@ -11,11 +12,18 @@ class PluginError(Exception):
 
 
 class Plugin(object):
+
+    __metaclass__ = ABCMeta
+
     def __init__(self, config=None):
         self.config = config
 
-    def execute(self):
-        raise Exception("override this method with your own")
+    @abstractmethod
+    def execute(self, data):
+        """Abstract method - override this method in the derived class.
+        :param data: data to process
+        """
+        return True
 
 
 class PluginManager(object):
