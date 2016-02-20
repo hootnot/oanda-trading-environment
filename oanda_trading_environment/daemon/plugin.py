@@ -78,7 +78,7 @@ class PluginManager(object):
                     cfgForInst.load(os.path.join(self.config_path, "%s.cfg" % plugin.lower()))
 
                     inst = class_(config=cfgForInst)
-                    logger.info("plugin loaded and configured: %s", f)
+                    logger.info("plugin loaded and configured: %s", plugin)
                     self.pm += inst
 
 
