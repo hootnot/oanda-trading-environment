@@ -53,7 +53,7 @@ class CandleFactory(object):
         self.processingMode = processingMode
         try:
             self.processing = getattr(sys.modules[__name__], self.processingMode)
-        except:
+        except AttributeError:
             logger.error("unknown processing mode: %s", self.processingMode)
 
             self.processingMode = "atEndOfTimeFrame"
