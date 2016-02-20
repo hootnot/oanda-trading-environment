@@ -5,11 +5,6 @@ import re
 from streamrecord import HEARTBEAT
 import logging
 
-"""
-{"tick": {"ask": 10901.4, "instrument": "DE30_EUR", "bid": 10898.9,
-                                 "time": "2015-08-18T17:15:14.574448Z"}}
-{"heartbeat": {"time": "2015-08-18T17:15:26.743512Z"}}
-"""
 
 atEndOfTimeFrame = 1
 dancingBear = 2
@@ -41,6 +36,11 @@ def granularity_to_time(s):
 
 
 class CandleFactory(object):
+    """ CandleFactory - class to fabricates candle records.
+
+    process tickdata of a stream to candle records for a given instrument
+    and granularity
+    """
 
     def __init__(self, instrument, granularity, processingMode='atEndOfTimeFrame'):
         self.instrument = instrument
