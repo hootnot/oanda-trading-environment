@@ -99,7 +99,7 @@ class PluginHandler(object):
             try:
                 handler.execute(data)
             except Exception:
-                logger.error("plugin: %s execute failure %s", handle.__class__.__name__, sys.exc_info()[0])
+                logger.error("plugin: %s execute failure %s", handler.__class__.__name__, sys.exc_info()[0])
 
     def __len__(self):
         return len(self.handlers)
