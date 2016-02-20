@@ -53,10 +53,10 @@ class PluginManager(object):
             if f.endswith('.py'):
                 f = f.replace('.py', '')
                 if f in self.enabled:
-                    logger.info("plugin added to be setup: %s" % f )
+                    logger.info("plugin added to be setup: %s", f)
                     plugins.append(f)
                 else:
-                    logger.info("skipping plugin: %s, not configured as enabled" % f )
+                    logger.info("skipping plugin: %s, not configured as enabled", f)
 
         for plugin in plugins:
             package = __import__(plugin)
@@ -70,7 +70,7 @@ class PluginManager(object):
                 if type(class_) == type:
                     if not issubclass(class_, Plugin):
                         logger.warning("SKIPPING plugin: [%s] : "
-                                       "not of type Plugin\n" % obj)
+                                       "not of type Plugin\n", obj)
                         continue
 
                     # print "CONFIG: ", plugin
@@ -78,7 +78,7 @@ class PluginManager(object):
                     cfgForInst.load(os.path.join(self.config_path, "%s.cfg" % plugin.lower()))
 
                     inst = class_(config=cfgForInst)
-                    logger.info("plugin loaded and configured: %s" % f )
+                    logger.info("plugin loaded and configured: %s", f)
                     self.pm += inst
 
 
@@ -95,11 +95,11 @@ class PluginHandler(object):
 
     def __call__(self, data):
         for handler in self.handlers:
-            logger.info("plugin: %s execute ..." % handler.__class__.__name__)
+            logger.info("plugin: %s execute ...", handler.__class__.__name__)
             try:
                 handler.execute(data)
             except:
-                logger.error("plugin: %s execute failure %s" % (handle.__class__.__name__, sys.exc_info()[0]))
+                logger.error("plugin: %s execute failure %s", handle.__class__.__name__, sys.exc_info()[0])
 
     def __len__(self):
         return len(self.handlers)
