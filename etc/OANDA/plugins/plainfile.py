@@ -30,8 +30,9 @@ class PlainFile(Plugin):
                                 "cache")
         if not os.path.isfile(fileName):
             dirName = os.path.dirname(fileName)
-            os.makedirs(dirName) if not os.path.isdir(dirName) else False
-            logger.info("created path: " + dirName)
+            if not os.path.isdir(dirName):
+                os.makedirs(dirName)
+                logger.info("created path: " + dirName)
 
         with open(fileName, "a") as O:
             O.write("%s,%.5f,%.5f,%.5f,%.5f,%d\n" %
