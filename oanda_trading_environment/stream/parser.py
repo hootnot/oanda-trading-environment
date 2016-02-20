@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def timeoutHandler(signum, frame):
-    logger.warn("TIMEOUT ... exiting pid %d", os.getpid())
+    logger.warn("TIMEOUT ... exiting pid %d", signum, os.getpid())
     sys.exit(1)
 
 
