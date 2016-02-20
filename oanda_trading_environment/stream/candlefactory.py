@@ -36,7 +36,7 @@ def granularity_to_time(s):
         f, n = re.match("(?P<f>[SMHD])(?:(?P<n>\d+)|)", s).groups()
         n = n if n else 1
         return mfact[f] * int(n)
-    except:
+    except AttributeError:
         raise UnknownGranularity(s)
 
 
