@@ -1,6 +1,6 @@
 from oanda_trading_environment.daemon.plugin import Plugin
 import os
-import json
+# import json
 
 import logging
 
@@ -42,22 +42,3 @@ class PlainFile(Plugin):
                      data['data']['low'],
                      data['data']['last'],
                      data['data']['volume']))
-
-
-if __name__ == "__main__":
-    # import sys
-    from oanda_trading_environment.daemon.config import Config
-    # config = Config(sys.argv[1])
-    b = PlainFile(config={"database": "/tmp/db/"})
-    data = {"instrument": "EUR_CHF",
-            "granularity": "M1",
-            "end": "2015-09-04 09:46:00",
-            "start": "2015-09-04 09:45:00",
-            "completed": True,
-            "data": {"high": 1.08529,
-                     "open": 1.085265,
-                     "last": 1.08522,
-                     "low": 1.0852,
-                     "volume": 8},
-            }
-    b.execute(data)
