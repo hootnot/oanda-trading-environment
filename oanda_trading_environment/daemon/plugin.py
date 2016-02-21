@@ -56,7 +56,8 @@ class PluginManager(object):
                     logger.info("plugin added to be setup: %s", f)
                     plugins.append(f)
                 else:
-                    logger.info("skipping plugin: %s, not configured as enabled", f)
+                    logger.info("skipping plugin: %s,"
+                                " not configured as enabled", f)
 
         for plugin in plugins:
             package = __import__(plugin)
@@ -75,7 +76,8 @@ class PluginManager(object):
 
                     # print "CONFIG: ", plugin
                     cfgForInst = Config(prefix=self.config.prefix)
-                    cfgForInst.load(os.path.join(self.config_path, "%s.cfg" % plugin.lower()))
+                    cfgForInst.load(os.path.join(self.config_path, "%s.cfg" %
+                                                 plugin.lower()))
 
                     inst = class_(config=cfgForInst)
                     logger.info("plugin loaded and configured: %s", plugin)
@@ -99,7 +101,8 @@ class PluginHandler(object):
             try:
                 handler.execute(data)
             except Exception:
-                logger.error("plugin: %s execute failure %s", handler.__class__.__name__, sys.exc_info()[0])
+                logger.error("plugin: %s execute failure %s",
+                             handler.__class__.__name__, sys.exc_info()[0])
 
     def __len__(self):
         return len(self.handlers)
