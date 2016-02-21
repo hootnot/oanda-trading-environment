@@ -67,11 +67,10 @@ class Streamer(oandapy.Streamer):
             self.ONsuccess(r)
             signal.alarm(HBTIME_OUT)
 
-            if abs((r.dt - self.last_tick_stamp).total_seconds()) > TICKTIME_OUT:
+            tdiff = abs((r.dt - self.last_tick_stamp).total_seconds())
+            if tdiff > TICKTIME_OUT:
                 logger.warn("at %s NO TICKS FOR: %.5f seconds",
-                            self.last_tick_stamp,
-                            abs((r.dt -
-                                  self.last_tick_stamp).total_seconds()))
+                            self.last_tick_stamp, tdiff)
 
         else:
             signal.alarm(HBTIME_OUT)
