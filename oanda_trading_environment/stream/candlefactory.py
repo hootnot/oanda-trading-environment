@@ -42,7 +42,8 @@ class CandleFactory(object):
     and granularity
     """
 
-    def __init__(self, instrument, granularity, processingMode='atEndOfTimeFrame'):
+    def __init__(self, instrument, granularity,
+                 processingMode='atEndOfTimeFrame'):
         self.instrument = instrument
         self.frameTime = granularity_to_time(granularity)
         self.granularity = granularity
@@ -52,12 +53,14 @@ class CandleFactory(object):
         self.processing = None
         self.processingMode = processingMode
         try:
-            self.processing = getattr(sys.modules[__name__], self.processingMode)
+            self.processing = getattr(sys.modules[__name__],
+                                      self.processingMode)
         except AttributeError:
             logger.error("unknown processing mode: %s", self.processingMode)
 
             self.processingMode = "atEndOfTimeFrame"
-            self.processing = getattr(sys.modules[__name__], self.processingMode)
+            self.processing = getattr(sys.modules[__name__],
+                                      self.processingMode)
             logger.info("fallback to processing mode: %s", self.processingMode)
         else:
             logger.info("processing mode: %s", self.processingMode)
@@ -99,7 +102,7 @@ class CandleFactory(object):
                 logger.warn("infrequent ticks: %s, %s completed with "
                             "heartbeat (%d secs)",
                             self.instrument, self.granularity,
-                             (tick.epoch - self.end))
+                            (tick.epoch - self.end))
                 return candle
             else:
                 return
@@ -128,8 +131,8 @@ class CandleFactory(object):
                 self.data['data']['last'] = tick.data['value']
                 lastChange = True
             self.data['data']['volume'] += 1
-            if (self.processing == dancingBear and lastChange) or \
-               (self.processing == dancingBearHighLowExtreme and extremeChange):
+            if self.processing == dancingBear and lastChange or \
+               self.processing == dancingBearHighLowExtreme and extremeChange:
                 logger.info("mode: %s change of extremes for %s, %s",
                             self.processingMode, self.instrument,
                             self.granularity)
