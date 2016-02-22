@@ -84,10 +84,10 @@ class Config(object):
                 return _gv_(data[currentKey], keywords)
             else:
                 if self.prefix and re.match("^.*(file|path)$", currentKey):
-                    return data[currentKey] if data[currentKey].startswith('/') else \
-                           path.join(self.prefix, data[currentKey])
-                else:
-                    return data[currentKey]
+                    if not data[currentKey].startswith('/'):
+                        return path.join(self.prefix, data[currentKey])
+
+                return data[currentKey]
 
         if not self.data:
             raise NoDataError("")
