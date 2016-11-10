@@ -3,7 +3,7 @@
 
 - name: install common packages
   apt: name={{item}} update_cache=yes cache_valid_time=86400
-  with_items: packages
+  with_items: "{{ packages }}"
 
 - name: getrules
   command: /sbin/iptables -L
@@ -12,4 +12,4 @@
 - name: iptables rules
   shell: /sbin/iptables {{item.rule}}
   when: iptablesrules.stdout.find("{{item.name}}") == -1
-  with_items: iptables_rules
+  with_items: "{{ iptables_rules }}"
