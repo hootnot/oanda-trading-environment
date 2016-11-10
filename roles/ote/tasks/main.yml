@@ -3,7 +3,7 @@
 
 - name: install required packages
   apt: name={{item}} update_cache=yes cache_valid_time=86400
-  with_items: packages
+  with_items: "{{ packages }}"
 
 - name: setup OANDA application group
   group: name=oanda
@@ -41,7 +41,7 @@
   when: package_stat.stat.exists == False
 
 - name: make venv enabled by .profile
-  lineinfile: dest="{{ oanda_home }}"/.profile line=". ./bin/activate"
+  lineinfile: state=present create=yes dest="{{ oanda_home }}"/.profile line=". ./bin/activate"
 
 - name: enable oanda user to sudo
   template: src=oanda_sudoers.j2 dest=/etc/sudoers.d/oanda validate='visudo -cf %s'
@@ -56,6 +56,6 @@
 - name: iptables rules
   shell: /sbin/iptables {{item.rule}}
   when: iptablesrules.stdout.find("{{item.name}}") == -1
-  with_items: iptables_rules
+  with_items: "{{ iptables_rules }}"
 #  notify:
 #    - save iptables
