@@ -13,7 +13,7 @@ configurable timeframes, by 1 minute, 5 minutes, 15 minutes etc. This makes it
 produce streaming candles.
 
 Candle data:
-
+```python
       {"data": {"instrument": "EUR_JPY",
                 "granularity" : "M1",
                 "start": "2015-09-02 15:36:00"
@@ -27,7 +27,7 @@ Candle data:
                  },
                }
        }
-
+```
 The larger timeframes can be requested using the API.
 
 Streaming data can be controlled by the 'fabricate' setting in the 'streamer:' 
@@ -161,30 +161,36 @@ Install
 ### Git
 
 Install by using a virtual environment and git:
-
+```bash
       $ cd <somewhere>
       $ mkdir OANDA
       $ cd OANDA
       $ virtualenv venv
+```
 
 Optionally use _--system-site-packages_ to use the standard available packages for the python modules available
 on your system: _pyyaml_, _pyzmq_. Check for the packages on the distribution you use.
 
+```bash
       $ . ./venv/bin/activate
       $ git clone https://github.com/hootnot/oanda-trading-environment.git
       $ cd oanda-trading-environment
       $ python setup.py install
+```
 
 OANDA has not made the oandapy module pip installable.
 A hack to get oandapy installed as a standalone module:
 
+```bash
       $ pip install git+https://github.com/hootnot/oandapy
+```
 
 This will install the latest oandapy using the setup.py from the oandapy fork.
-
+```bash
       $ pip list | grep oanda
       oanda-trading-environment (0.0.1)
       oandapy (0.1)
+```
 
 ### pip
 
@@ -192,6 +198,7 @@ Install from pypi:
 
 using a virtual environment:
 
+```bash
       $ cd <somewhere>
       $ mkdir OANDA
       $ cd OANDA
@@ -199,11 +206,14 @@ using a virtual environment:
       $ . ./venv/bin/activate
       $ pip install oanda-trading-environment
       $ pip install git+https://github.com/hootnot/oandapy
+```
 
 using a system install:
 
+```bash
       $ sudo pip install oanda-trading-environment
       $ sudo pip install git+https://github.com/hootnot/oandapy
+```
 
 Configure the OANDAd.cfg config file and start the daemon.
 
@@ -229,6 +239,7 @@ OANDAd is built using [daemoncle](https://github.com/jnrbsn/daemonocle). The 'st
 will process the stream. When there are issues, TIME-OUT for instance, the child will
 exit and a new child will be spawned. 
 
+```bash
       $ OANDAd start 
       Starting OANDAd ... OK
 
@@ -237,7 +248,7 @@ exit and a new child will be spawned.
 
       $ OANDAd stop
       Stopping OANDAd ... OK
-
+```
 
 The daemon will process streaming quotes now and process the timeframes
 as configured. Timeframes are currently based on the midprice of bid/ask.
@@ -261,7 +272,7 @@ This simple piece of code acts as a subscriber to the daemon. All completed time
 Using ZMQ make it easy to program different strategies completely independent from each other. By using 'topics' 
 it is possible to subscribe for a certain time granularity like M1, M5 etc. Check the ZMQ for details.
 
-
+```python
      import zmq
 
      context = zmq.Context()
@@ -271,11 +282,13 @@ it is possible to subscribe for a certain time granularity like M1, M5 etc. Chec
 
      socket.setsockopt( zmq.RCVBUF, 1000)
      while True:
-       msg = socket.recv()
-       print "GOT: ", msg
+         msg = socket.recv()
+         print "GOT: ", msg
+```
 
 This will show candle data like below, every time a timeframe is completed.
 
+```python
      GOT:  {"data": {
                      "instrument": "EUR_GBP",
                      "granularity": "M1",
@@ -323,3 +336,14 @@ This will show candle data like below, every time a timeframe is completed.
                              }
                     }
             }
+```
+
+About this software
+-------------------
+The *oanda-trading-environment* software is a personal project.
+I have no prior or existing relationship with OANDA.
+
+If you have any questions regarding this software, please take a look at
+the documentation first.
+
+If you still have questions/issues you can open an *issue* on Gitub: https://github.com/hootnot/oanda-trading-environment
