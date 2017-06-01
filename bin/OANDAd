@@ -63,19 +63,20 @@ factories = {}
 
 
 def cb_shutdown(message, code):
-    # make sure to kill child processes also
-    logging.info('Daemon is stopping %d', os.getpid())
-    p = None
-    try:
-        p = psutil.Process(os.getpid())
-    except psutil.NoSuchProcess:
-        logging.info('No such process ...')
-        return
+    logging.error('Daemon is stopping %d', os.getpid())
 
-    child_pid = p.get_children(recursive=True)
-    for pid in child_pid:
-        os.kill(pid.pid, signal.SIGTERM)
-        logging.info('killing %d', pid)
+    def on_terminate(proc):
+        logger.error("process {} terminated with exit code {}".format(
+              proc, proc.returncode))
+
+    procs = psutil.Process().children()
+    for p in procs:
+        p.terminate()
+        gone, still_alive = psutil.wait_procs(procs,
+                                              timeout=3,
+                                              callback=on_terminate)
+    for p in still_alive:
+        p.kill()
 
     logging.debug(message)
 
