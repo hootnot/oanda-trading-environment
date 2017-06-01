@@ -17,7 +17,7 @@ from oanda_trading_environment.daemon.plugin import PluginManager
 from oanda_trading_environment.stream import CandleFactory, StreamRecord
 from oanda_trading_environment import stream
 
-# initial exponential backup
+# initial exponential backoff
 EBO = 1
 MAX_FORK_STREAMPARSER_SLAVE = 5
 
@@ -29,6 +29,7 @@ CONFIG_FILE = os.path.join(PREFIX, "etc/OANDA/config/OANDAd.cfg")
 parser = argparse.ArgumentParser(prog='OANDAd')
 
 verbose = argparse.ArgumentParser(add_help=False)
+verbose.add_argument('--V20', action='store_true', help='use the V20 REST-API')
 verbose.add_argument('--verbose', '-v', action="count", help='verbosity level')
 verbose.add_argument('--config', '-c', default=CONFIG_FILE,
                      help="config file, default: " + CONFIG_FILE)
@@ -52,13 +53,18 @@ sp_stop.set_defaults(verbose=0, foreground=None,
 
 args = parser.parse_args()
 
+if not args.V20:
+    from oanda_trading_environment.stream.parser import Streamer
+else:
+    from oanda_trading_environment.stream.parserV20 import V20Streamer as Streamer
+
 # globals
 factories = {}
 
 
 def cb_shutdown(message, code):
     # make sure to kill child processes also
-    logging.info('Daemon is stopping %d' % os.getpid())
+    logging.info('Daemon is stopping %d', os.getpid())
     p = None
     try:
         p = psutil.Process(os.getpid())
@@ -69,12 +75,13 @@ def cb_shutdown(message, code):
     child_pid = p.get_children(recursive=True)
     for pid in child_pid:
         os.kill(pid.pid, signal.SIGTERM)
-        logging.info('killing %d' % pid)
+        logging.info('killing %d', pid)
 
     logging.debug(message)
 
 
 class TickProcessor(object):
+
     def __init__(self, plugin_manager):
         self.pm = plugin_manager
 
@@ -87,7 +94,10 @@ class TickProcessor(object):
                         logging.info("record completed: " + json.dumps(r))
                         self.pm.execute(r)
             except KeyError:
-                logging.error("no factory for: %s" % s['instrument'])
+                logging.error("no factory for: %s", s['instrument'])
+
+            except Exception as e:
+                logging.error("TickProcessor: unknown exception: %s", e)
 
 # -------------------------------------------------
 
@@ -107,7 +117,7 @@ class Main(object):
         )
 
         try:
-            logging.info("Setting loglevel to: %s" % config['daemon::loglevel'])
+            logging.info("Setting loglevel to: %s", config['daemon::loglevel'])
             logging.getLogger().setLevel(getattr(logging, config['daemon::loglevel']))
         except:
             logging.error("failure changing loglevel, check configfile")
@@ -116,16 +126,16 @@ class Main(object):
         if "fabricate" in config['streamer']:
             processingMode = config['streamer::fabricate']
 
-        logging.info("Daemon is starting (%d)" % os.getpid())
+        logging.info("Daemon is starting (%d)", os.getpid())
         for instrument, details in config['instruments'].iteritems():
             factories.update({instrument: []})
-            logging.info("setting up candle factories for: %s" % instrument)
+            logging.info("setting up candle factories for: %s", instrument)
             for timeframe in details['timeframes']:
                 factories[instrument].append(CandleFactory(instrument,
                                              timeframe,
                                              processingMode=processingMode))
-                logging.info("  created: factory %s, timeframe: %s" %
-                             (instrument, timeframe))
+                logging.info("  created: factory %s, timeframe: %s",
+                             instrument, timeframe)
 
     def main(self):
         ebo = EBO
@@ -138,7 +148,7 @@ class Main(object):
                 pid = os.fork()
                 referenceEpoch = int(time.time())
             except OSError as e:
-                logging.error('%s' % e)
+                logging.error('%s', e)
                 time.sleep(2)
                 forks += 1
                 if forks <= MAX_FORK_STREAMPARSER_SLAVE:
@@ -151,17 +161,17 @@ class Main(object):
                 childExitStatus, text = os.wait()
 
                 childExitCode = childExitStatus >> 8
-                logging.info('slave %d died: exit: %d' % (pid, childExitCode))
+                logging.info('slave %d died: exit: %d', pid, childExitCode)
                 # check how/ how soon it died
                 now = int(time.time())
                 if now - referenceEpoch < 1:
                     logging.error("slave %d died to soon ... respawn with "
-                                  "exp. backoff %d seconds" % (pid, ebo))
+                                  "exp. backoff %d seconds", pid, ebo)
                     ebo *= 2
                     time.sleep(ebo)
                 else:
-                    logging.error("slave %d died ... after %d seconds" %
-                                  (pid, now - referenceEpoch))
+                    logging.error("slave %d died ... after %d seconds",
+                                  pid, now - referenceEpoch)
             elif pid == 0:
                 # start the streamer
                 # if it times out the outer while-True will get us a new one
@@ -169,8 +179,8 @@ class Main(object):
                 # prevent cleanup of the pidfile when child process exits
                 self._daemon.shutdown_callback = None
                 self._daemon.pidfile = None
-                logging.info('starting slave streamparser: %d %d' %
-                             (os.getpid(), os.getppid()))
+                logging.info('starting slave streamparser: %d %d',
+                             os.getpid(), os.getppid())
                 streamLog = None
                 if "logfile" in config["streamer"]:
                     try:
@@ -182,7 +192,7 @@ class Main(object):
                         streamLogName = "%s.%s" % (streamLogName, ext)
                         streamLog = open(streamLogName, "a")
                     except:
-                        logging.error('failure opening streamlog: %' %
+                        logging.error('failure opening streamlog: %',
                                       config["streamer::logfile"])
 
                 try:
@@ -193,14 +203,14 @@ class Main(object):
                                          prefix=config.prefix))
                     pm.load()
                     tp = TickProcessor(pm)
-                    s = stream.Streamer(on_success=tp.on_success,
-                                        streamLog=streamLog,
-                                        environment="practice",
-                                        access_token=config['access_token'])
+                    s = Streamer(on_success=tp.on_success,
+                                 streamLog=streamLog,
+                                 environment="practice",
+                                 access_token=config['access_token'])
                     s.start(accountId=config['account_id'],
                             instruments=",".join(factories.keys()))
                 except Exception as e:
-                    logging.error("%s" % e)
+                    logging.error("%s", e)
                     exit(2)
 
 
@@ -214,7 +224,7 @@ if __name__ == '__main__':
         uid = pwrec.pw_uid
         gid = pwrec.pw_gid
     except Exception as e:
-        logging.error("%s" % e)
+        logging.error("%s", e)
         exit(0)
 
     if args.command in ["start", "stop", "status"]:
@@ -230,7 +240,7 @@ if __name__ == '__main__':
         try:
             parser = Main(config=config, daemon=daemon)
         except Exception as e:
-            logging.error("%s" % e)
+            logging.error("%s", e)
         else:
             daemon.worker = parser.main
             daemon.do_action(args.command)
