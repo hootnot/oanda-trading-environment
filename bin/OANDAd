@@ -29,7 +29,6 @@ CONFIG_FILE = os.path.join(PREFIX, "etc/OANDA/config/OANDAd.cfg")
 parser = argparse.ArgumentParser(prog='OANDAd')
 
 verbose = argparse.ArgumentParser(add_help=False)
-verbose.add_argument('--V20', action='store_true', help='use the V20 REST-API')
 verbose.add_argument('--verbose', '-v', action="count", help='verbosity level')
 verbose.add_argument('--config', '-c', default=CONFIG_FILE,
                      help="config file, default: " + CONFIG_FILE)
@@ -53,10 +52,14 @@ sp_stop.set_defaults(verbose=0, foreground=None,
 
 args = parser.parse_args()
 
-if not args.V20:
-    from oanda_trading_environment.stream.parser import Streamer
-else:
+config = Config(prefix=PREFIX)
+config.load(args.config)
+try:
+    int(config['account_id'])
+except ValueError:
     from oanda_trading_environment.stream.parserV20 import V20Streamer as Streamer
+else:
+    from oanda_trading_environment.stream.parser import Streamer
 
 # globals
 factories = {}
@@ -66,8 +69,8 @@ def cb_shutdown(message, code):
     logging.error('Daemon is stopping %d', os.getpid())
 
     def on_terminate(proc):
-        logger.error("process {} terminated with exit code {}".format(
-              proc, proc.returncode))
+        logging.error("process {} terminated with exit code {}".format(
+                      proc, proc.returncode))
 
     procs = psutil.Process().children()
     for p in procs:
@@ -216,11 +219,8 @@ class Main(object):
 
 
 if __name__ == '__main__':
-    config = None
     uid, gid = None, None
     try:
-        config = Config(prefix=PREFIX)
-        config.load(args.config)
         pwrec = pwd.getpwnam(config["daemon::user"])
         uid = pwrec.pw_uid
         gid = pwrec.pw_gid
