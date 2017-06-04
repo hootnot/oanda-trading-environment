@@ -11,8 +11,8 @@ import signal
 import json
 import pwd
 from datetime import datetime
+from yachain import Config
 
-from oanda_trading_environment.daemon.config import Config
 from oanda_trading_environment.daemon.plugin import PluginManager
 from oanda_trading_environment.stream import CandleFactory, StreamRecord
 from oanda_trading_environment import stream
