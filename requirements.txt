@@ -1,3 +1,4 @@
 pyyaml>=3.10
 daemonocle >= 0.8
 pyzmq >= 14.7
+yachain
