@@ -1,7 +1,7 @@
 import sys
 import os
 import logging
-from oanda_trading_environment.daemon.config import Config
+from yachain import Config
 
 logger = logging.getLogger(__name__)
 
