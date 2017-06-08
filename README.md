@@ -12,6 +12,10 @@ Main part is the **OANDAd** daemon that parses the streaming quotes in
 configurable timeframes, by 1 minute, 5 minutes, 15 minutes etc. This makes it
 produce streaming candles.
 
+As of version 0.3.0 **OANDAd** detects automatically the use of
+REST-V1 / REST-V20, by the _account\_id_ string in the _OANDAd.cfg_.
+
+
 Candle data:
 ```python
       {"data": {"instrument": "EUR_JPY",
