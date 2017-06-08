@@ -204,8 +204,8 @@ using a virtual environment:
       $ cd OANDA
       $ virtualenv [--system-site-packages] venv
       $ . ./venv/bin/activate
-      $ pip install oanda-trading-environment
       $ pip install git+https://github.com/hootnot/oandapy
+      $ pip install --no-binary :all: oanda-trading-environment
 ```
 
 using a system install:
