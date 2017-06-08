@@ -46,7 +46,7 @@ class PlainFile(Plugin):
 if __name__ == "__main__":
     import sys
     import time
-    from oanda_trading_environment.daemon.config import Config
+    from yachain import Config
     # config = Config(sys.argv[1])
     b = PlainFile(config={"database": "/tmp/db/"})
     data = {"instrument": "EUR_CHF",
