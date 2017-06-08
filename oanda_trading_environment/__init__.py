@@ -14,7 +14,7 @@
 """
 
 __title__ = "OANDA Trading Environment"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Feite Brekeveld"
 __license__ = "MIT"
 __copyright__ = "Copyright 2015 Feite Brekeveld"
