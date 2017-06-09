@@ -2,14 +2,20 @@
 # This Playbook runs all the common plays in the deployment 
 
 - name: install common packages
-  apt: name={{item}} update_cache=yes cache_valid_time=86400
+  apt:
+    name: "{{item}}"
+    update_cache: yes
+    cache_valid_time: 86400
   with_items: "{{ packages }}"
+  become: yes
 
 - name: getrules
   command: /sbin/iptables -L
   register: iptablesrules
+  become: yes
 
 - name: iptables rules
   shell: /sbin/iptables {{item.rule}}
   when: iptablesrules.stdout.find("{{item.name}}") == -1
   with_items: "{{ iptables_rules }}"
+  become: yes

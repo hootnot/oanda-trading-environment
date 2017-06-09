@@ -2,60 +2,130 @@
 # This Playbook arranges the setup of the OANDA trading Environment
 
 - name: install required packages
-  apt: name={{item}} update_cache=yes cache_valid_time=86400
+  apt:
+    name: "{{item}}"
+    update_cache: yes
+    cache_valid_time: 86400
   with_items: "{{ packages }}"
+  become: yes
 
 - name: setup OANDA application group
-  group: name=oanda
+  group:
+    name: "{{oanda_group}}"
+  become: yes
 
 - name: setup OANDA application user
-  user: name=oanda shell=/bin/bash home="{{ oanda_home }}" comment="OANDA-TE" group="oanda" state=present
+  user:
+    name: "{{oanda_user}}"
+    shell: /bin/bash
+    home: "{{ oanda_home }}"
+    comment: "OANDA-TE"
+    group: "{{oanda_group}}"
+    state: present
+  become: yes
 
 - name: account permissions
-  file: name="{{ oanda_home }}" state=directory mode=0700
+  file:
+    name: "{{ oanda_home }}"
+    state: directory
+    mode: 0700
+  become: yes
+
+- name: /var/run/OANDA 
+  file:
+    name: "/var/run/OANDA"
+    state: directory
+    mode: 0755
+    owner: "{{oanda_user}}"
+    group: "{{oanda_group}}"
+  become: yes
 
 - name: setup virtualenv for OTE under user oanda
-  pip: name=requests[security] virtualenv="{{ virtual_env }}"
+  pip:
+    name: requests[security]
+    virtualenv: "{{ virtual_env }}"
   become: yes
-  become_user: oanda
+  become_user: "{{oanda_user}}"
 
 - name: venv upgrade pip
-  pip: name=pip virtualenv="{{ virtual_env }}" extra_args=--upgrade
+  pip:
+    name: pip
+    virtualenv: "{{ virtual_env }}"
+    extra_args: "--upgrade"
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: venv build pyzmq (takes a while!)
-  pip: name=pyzmq virtualenv="{{ virtual_env }}"
+  pip:
+    name: pyzmq
+    virtualenv: "{{ virtual_env }}"
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: oandapy (from fork!)
-  pip: name="git+https://github.com/hootnot/oandapy.git#egg=0.1.0" virtualenv="{{ virtual_env }}"
+  pip:
+    name: "git+https://github.com/hootnot/oandapy.git#egg=0.1.0"
+    virtualenv: "{{ virtual_env }}"
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: check for local package
-  stat: path=/tmp/ote/oanda-trading-environment.tar.gz
+  stat:
+    path: "/tmp/ote/{{ote_package_name}}.tar.gz"
   register: package_stat
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: install from local OTE-package
-  pip: name=/tmp/ote/"{{ote_package_name}}".tar.gz virtualenv="{{ virtual_env }}"
+  pip:
+    name: "/tmp/ote/{{ote_package_name}}.tar.gz"
+    virtualenv: "{{ virtual_env }}"
+    extra_args: "--no-binary :all:"
   when: package_stat.stat.exists == True
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: install OTE from pypi
-  pip: name="{{ote_package_name}}" virtualenv="{{ virtual_env }}"
+  pip:
+    name: "{{ote_package_name}}"
+    virtualenv: "{{ virtual_env }}"
+    extra_args: "--no-binary :all:"
   when: package_stat.stat.exists == False
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: make venv enabled by .profile
-  lineinfile: state=present create=yes dest="{{ oanda_home }}"/.profile line=". ./bin/activate"
+  lineinfile:
+    state: present
+    create: yes
+    dest: "{{ oanda_home }}/.profile"
+    line: ". ./bin/activate"
+  become: yes
+  become_user: "{{oanda_user}}"
 
 - name: enable oanda user to sudo
-  template: src=oanda_sudoers.j2 dest=/etc/sudoers.d/oanda validate='visudo -cf %s'
+  template:
+    src: oanda_sudoers.j2
+    dest: /etc/sudoers.d/oanda
+    validate: 'visudo -cf %s'
+  become: yes
 
 - name: enable start of daemon at system boot
-  lineinfile: dest=/etc/rc.local line="su -l oanda -c \"sudo /opt/oanda/bin/OANDAd start\"" insertbefore="exit 0"
+  lineinfile:
+    dest: /etc/rc.local
+    line: "su -l oanda -c \"sudo /opt/oanda/bin/OANDAd start\""
+    insertbefore: "exit 0"
+  become: yes
 
 - name: getrules
   command: /sbin/iptables -L
   register: iptablesrules
+  become: yes
 
 - name: iptables rules
   shell: /sbin/iptables {{item.rule}}
   when: iptablesrules.stdout.find("{{item.name}}") == -1
   with_items: "{{ iptables_rules }}"
+  become: yes
 #  notify:
 #    - save iptables

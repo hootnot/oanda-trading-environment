@@ -3,10 +3,13 @@
 #
 virtual_env: ~oanda/.
 oanda_home: /opt/oanda
+oanda_user: oanda
+oanda_group: oanda
 
 # the oandapy package is installed from this fork
 # if OANDA makes it pip installable, it will be made part of the requirements file
 oandapy_package: git+https://github.com/hootnot/oandapy.git#egg=0.1.0
+oandapyV20_package: oandapyV20
 
 # Normally the package will be installed from pypi. If a package with this name
 # exists locally under /tmp/ote, that package will be installed
