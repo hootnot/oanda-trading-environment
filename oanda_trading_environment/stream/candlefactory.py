@@ -42,7 +42,8 @@ def granularity_to_time(s):
 
 class CandleFactory(object):
 
-    def __init__(self, instrument, granularity, processingMode='atEndOfTimeFrame'):
+    def __init__(self, instrument, granularity,
+                 processingMode='atEndOfTimeFrame'):
         self.instrument = instrument
         self.frameTime = granularity_to_time(granularity)
         self.granularity = granularity
@@ -52,15 +53,17 @@ class CandleFactory(object):
         self.processing = None
         self.processingMode = processingMode
         try:
-            self.processing = getattr(sys.modules[__name__], self.processingMode)
+            self.processing = getattr(sys.modules[__name__],
+                                      self.processingMode)
         except:
-            logger.error("unknown processing mode: %s" % self.processingMode)
+            logger.error("unknown processing mode: %s", self.processingMode)
 
             self.processingMode = "atEndOfTimeFrame"
-            self.processing = getattr(sys.modules[__name__], self.processingMode)
-            logger.info("fallback to processing mode: %s" % self.processingMode)
+            self.processing = getattr(sys.modules[__name__],
+                                      self.processingMode)
+            logger.info("fallback to processing mode: %s", self.processingMode)
         else:
-            logger.info("processing mode: %s" % self.processingMode)
+            logger.info("processing mode: %s", self.processingMode)
 
     def initData(self, tick):
         # init the frame
@@ -97,9 +100,9 @@ class CandleFactory(object):
                 candle = self.make_candle(completed=True)
                 self.data = None     # clear it, reinitialized by the next tick
                 logger.warn("infrequent ticks: %s, %s completed with "
-                            "heartbeat (%d secs)" %
-                            (self.instrument, self.granularity,
-                             (tick.epoch - self.end)))
+                            "heartbeat (%d secs)",
+                            self.instrument, self.granularity,
+                            (tick.epoch - self.end))
                 return candle
             else:
                 return
@@ -128,11 +131,11 @@ class CandleFactory(object):
                 self.data['data']['last'] = tick.data['value']
                 lastChange = True
             self.data['data']['volume'] += 1
-            if (self.processing == dancingBear and lastChange) or \
-               (self.processing == dancingBearHighLowExtreme and extremeChange):
-                logger.info("mode: %s change of extremes for %s, %s" %
-                            (self.processingMode, self.instrument,
-                             self.granularity))
+            if self.processing == dancingBear and lastChange or \
+               self.processing == dancingBearHighLowExtreme and extremeChange:
+                logger.info("mode: %s change of extremes for %s, %s",
+                            self.processingMode, self.instrument,
+                            self.granularity)
                 return self.make_candle()
             return None
 
