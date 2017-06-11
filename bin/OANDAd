@@ -2,6 +2,7 @@
 
 import sys
 import os
+import six
 import argparse
 import logging
 import time
@@ -131,7 +132,7 @@ class Main(object):
             processingMode = config['streamer::fabricate']
 
         logging.info("Daemon is starting (%d)", os.getpid())
-        for instrument, details in config['instruments'].iteritems():
+        for instrument, details in six.iteritems(config['instruments']):
             factories.update({instrument: []})
             logging.info("setting up candle factories for: %s", instrument)
             for timeframe in details['timeframes']:
