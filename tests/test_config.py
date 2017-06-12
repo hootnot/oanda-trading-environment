@@ -7,15 +7,6 @@ import sys
 testcfg = None
 
 
-def logit(f):
-    def wijzig(*args):
-        rv = f(*args)
-        print >>sys.stderr, "LOG: ", rv
-        print >>sys.stderr, retValue
-        return rv
-    return wijzig
-
-
 class Test_Config(unittest.TestCase):
     def setUp(self):
         global testcfg
