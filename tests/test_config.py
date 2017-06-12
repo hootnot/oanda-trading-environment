@@ -1,8 +1,6 @@
 import unittest
 import yachain
 
-import os
-import sys
 
 testcfg = None
 
