@@ -1,5 +1,5 @@
 import unittest
-from oanda_trading_environment.daemon import config
+import yachain
 
 import os
 import sys
@@ -19,19 +19,19 @@ def logit(f):
 class Test_Config(unittest.TestCase):
     def setUp(self):
         global testcfg
-        testcfg = config.Config()
+        testcfg = yachain.Config()
         testcfg.load("etc/OANDA/config/OANDAd.cfg")
 
     def test_openfailure(self):
         cfg = None
         with self.assertRaises(IOError) as cm:
-            cfg = config.Config()
+            cfg = yachain.Config()
             cfg.load("etc/nonexistant.cfg")
 
     def test_NoDataError(self):
         cfg = None
-        with self.assertRaises(config.NoDataError) as cm:
-            cfg = config.Config()
+        with self.assertRaises(yachain.NoDataError) as cm:
+            cfg = yachain.Config()
             cfg["daemon::user"]
 
     def test__domain(self):
