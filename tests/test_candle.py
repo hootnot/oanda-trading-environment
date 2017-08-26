@@ -2,8 +2,6 @@ import unittest
 from oanda_trading_environment.stream import CandleFactory, StreamRecord
 from oanda_trading_environment.stream import granularity_to_time
 
-import os
-import sys
 
 # """  {"heartbeat": {"time": "2015-08-21T06:11:57.682301Z"}} """,
 test_ticks = {}
@@ -119,15 +117,6 @@ candles = {
 candle_factory = None
 testdata = None
 TICKDATA = ""
-
-
-def logit(f):
-    def wijzig(*args):
-        rv = f(*args)
-        print >>sys.stderr, "LOG: ", rv
-        print >>sys.stderr, retValue
-        return rv
-    return wijzig
 
 
 class Test_candlefactory(unittest.TestCase):
